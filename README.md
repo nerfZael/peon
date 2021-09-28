@@ -10,7 +10,7 @@ You will find the code for:
 * An example user contract(UserContract.sol) that queries a polywrapper
 * An example PEON contract(TestPeonImplementation.sol) that's a basic implementation of the PEON standard
 * IPEON interface(IPEON.sol)
-* A proof of concept oracle node that listens to any arbitrary polywrapper query emitted from a PEON contract, executes them and relays the results back to the contract.
+* A proof of concept oracle node that listens to any arbitrary polywrapper query emitted from a PEON contract, executes it and relays the results back to the contract.
 
 ## Example use
 
