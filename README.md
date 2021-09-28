@@ -7,6 +7,8 @@ Link to the full document: https://hackmd.io/@nerfZael/SkYSopVXF
 
 ## Example use
 
+Querying a polywrapper("my-polywrapper.eth") from a smart contract.
+
 my-polywrapper.eth schema:
 
 ```typescript
@@ -15,7 +17,7 @@ type Query {
 }
 ```
 
-Call my-polywrapper.eth from a contract
+Query my-polywrapper.eth from a smart contract
 ```typescript
 function someFunc(string calldata packageUri, string calldata method, string calldata argStr) public {
   //eg. my-polywrapper.eth
