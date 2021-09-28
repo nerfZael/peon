@@ -1,0 +1,23 @@
+node_modules
+bin
+build
+dist
+
+#Hardhat deploy
+deployments/localhost
+
+#Hardhat files
+cache
+artifacts
+
+#Environment
+.env
+.env.docker
+.env.local
+
+# OpenZeppelin
+.openzeppelin/dev-*.json
+.openzeppelin/unknown-*.json
+.openzeppelin/.session
+coverage/
+coverage.json
