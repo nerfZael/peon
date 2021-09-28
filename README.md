@@ -5,6 +5,13 @@ The way it achieves that is by defining contract and package(program) interfaces
 
 Link to the full document: https://hackmd.io/@nerfZael/SkYSopVXF
 
+## In this repo
+You will find the code for:
+* An example user contract(UserContract.sol) that queries a polywrapper
+* An example PEON contract(TestPeonImplementation.sol) that's a basic implementation of the PEON standard
+* IPEON interface(IPEON.sol)
+* A proof of concept oracle node that listens to any arbitrary polywrapper query emitted from a PEON contract, executes them and relays the results back to the contract.
+
 ## Example use
 
 Querying a polywrapper("my-polywrapper.eth") from a smart contract.
