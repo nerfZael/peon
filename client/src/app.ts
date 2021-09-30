@@ -1,3 +1,4 @@
+import { Wallet } from "ethers";
 import { buildDependencyContainer } from "./di/buildDependencyContainer";
 
 // eslint-disable-next-line @typescript-eslint/no-var-requires
@@ -18,6 +19,14 @@ if (argv._ && argv._.length !== 0) {
     switch (command) {
       case "run":
         await peonClient.run(process.env.PEON_ADDRESS);
+        break;
+      case "wallet":
+        const wallet = Wallet.createRandom({
+          extraEntropy: argv.entropy
+        });
+        console.log("Address",  argv.entropy);
+        console.log("Address", wallet.address);
+        console.log("Private key", wallet.privateKey);
         break;
       default:
         console.log(`Command not found: ${command}.`);
