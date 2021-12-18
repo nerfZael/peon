@@ -12,6 +12,7 @@ import {
   BaseContract,
   ContractTransaction,
   Overrides,
+  PayableOverrides,
   CallOverrides,
 } from "ethers";
 import { BytesLike } from "@ethersproject/bytes";
@@ -21,18 +22,28 @@ import type { TypedEventFilter, TypedEvent, TypedListener } from "./common";
 
 interface UserContractInterface extends ethers.utils.Interface {
   functions: {
-    "callback(bytes32,string)": FunctionFragment;
-    "queryResponses(bytes32)": FunctionFragment;
+    "callback(uint256,string)": FunctionFragment;
+    "getLatestQuery()": FunctionFragment;
+    "latestQueryId()": FunctionFragment;
+    "queryInfos(uint256)": FunctionFragment;
     "someFunc(string,string,string)": FunctionFragment;
   };
 
   encodeFunctionData(
     functionFragment: "callback",
-    values: [BytesLike, string]
+    values: [BigNumberish, string]
   ): string;
   encodeFunctionData(
-    functionFragment: "queryResponses",
-    values: [BytesLike]
+    functionFragment: "getLatestQuery",
+    values?: undefined
+  ): string;
+  encodeFunctionData(
+    functionFragment: "latestQueryId",
+    values?: undefined
+  ): string;
+  encodeFunctionData(
+    functionFragment: "queryInfos",
+    values: [BigNumberish]
   ): string;
   encodeFunctionData(
     functionFragment: "someFunc",
@@ -41,24 +52,29 @@ interface UserContractInterface extends ethers.utils.Interface {
 
   decodeFunctionResult(functionFragment: "callback", data: BytesLike): Result;
   decodeFunctionResult(
-    functionFragment: "queryResponses",
+    functionFragment: "getLatestQuery",
     data: BytesLike
   ): Result;
+  decodeFunctionResult(
+    functionFragment: "latestQueryId",
+    data: BytesLike
+  ): Result;
+  decodeFunctionResult(functionFragment: "queryInfos", data: BytesLike): Result;
   decodeFunctionResult(functionFragment: "someFunc", data: BytesLike): Result;
 
   events: {
-    "Query(bytes32)": EventFragment;
-    "Response(bytes32,string)": EventFragment;
+    "Query(uint256)": EventFragment;
+    "Response(uint256,string)": EventFragment;
   };
 
   getEvent(nameOrSignatureOrTopic: "Query"): EventFragment;
   getEvent(nameOrSignatureOrTopic: "Response"): EventFragment;
 }
 
-export type QueryEvent = TypedEvent<[string] & { queryId: string }>;
+export type QueryEvent = TypedEvent<[BigNumber] & { queryId: BigNumber }>;
 
 export type ResponseEvent = TypedEvent<
-  [string, string] & { queryId: string; response: string }
+  [BigNumber, string] & { queryId: BigNumber; response: string }
 >;
 
 export class UserContract extends BaseContract {
@@ -106,13 +122,19 @@ export class UserContract extends BaseContract {
 
   functions: {
     callback(
-      queryId: BytesLike,
+      queryId: BigNumberish,
       responseStr: string,
       overrides?: Overrides & { from?: string | Promise<string> }
     ): Promise<ContractTransaction>;
 
-    queryResponses(
-      arg0: BytesLike,
+    getLatestQuery(
+      overrides?: CallOverrides
+    ): Promise<[[boolean, string] & { exists: boolean; responseStr: string }]>;
+
+    latestQueryId(overrides?: CallOverrides): Promise<[BigNumber]>;
+
+    queryInfos(
+      arg0: BigNumberish,
       overrides?: CallOverrides
     ): Promise<[boolean, string] & { exists: boolean; responseStr: string }>;
 
@@ -120,18 +142,24 @@ export class UserContract extends BaseContract {
       packageUri: string,
       method: string,
       argStr: string,
-      overrides?: Overrides & { from?: string | Promise<string> }
+      overrides?: PayableOverrides & { from?: string | Promise<string> }
     ): Promise<ContractTransaction>;
   };
 
   callback(
-    queryId: BytesLike,
+    queryId: BigNumberish,
     responseStr: string,
     overrides?: Overrides & { from?: string | Promise<string> }
   ): Promise<ContractTransaction>;
 
-  queryResponses(
-    arg0: BytesLike,
+  getLatestQuery(
+    overrides?: CallOverrides
+  ): Promise<[boolean, string] & { exists: boolean; responseStr: string }>;
+
+  latestQueryId(overrides?: CallOverrides): Promise<BigNumber>;
+
+  queryInfos(
+    arg0: BigNumberish,
     overrides?: CallOverrides
   ): Promise<[boolean, string] & { exists: boolean; responseStr: string }>;
 
@@ -139,18 +167,24 @@ export class UserContract extends BaseContract {
     packageUri: string,
     method: string,
     argStr: string,
-    overrides?: Overrides & { from?: string | Promise<string> }
+    overrides?: PayableOverrides & { from?: string | Promise<string> }
   ): Promise<ContractTransaction>;
 
   callStatic: {
     callback(
-      queryId: BytesLike,
+      queryId: BigNumberish,
       responseStr: string,
       overrides?: CallOverrides
     ): Promise<void>;
 
-    queryResponses(
-      arg0: BytesLike,
+    getLatestQuery(
+      overrides?: CallOverrides
+    ): Promise<[boolean, string] & { exists: boolean; responseStr: string }>;
+
+    latestQueryId(overrides?: CallOverrides): Promise<BigNumber>;
+
+    queryInfos(
+      arg0: BigNumberish,
       overrides?: CallOverrides
     ): Promise<[boolean, string] & { exists: boolean; responseStr: string }>;
 
@@ -163,38 +197,44 @@ export class UserContract extends BaseContract {
   };
 
   filters: {
-    "Query(bytes32)"(
+    "Query(uint256)"(
       queryId?: null
-    ): TypedEventFilter<[string], { queryId: string }>;
+    ): TypedEventFilter<[BigNumber], { queryId: BigNumber }>;
 
-    Query(queryId?: null): TypedEventFilter<[string], { queryId: string }>;
+    Query(
+      queryId?: null
+    ): TypedEventFilter<[BigNumber], { queryId: BigNumber }>;
 
-    "Response(bytes32,string)"(
+    "Response(uint256,string)"(
       queryId?: null,
       response?: null
     ): TypedEventFilter<
-      [string, string],
-      { queryId: string; response: string }
+      [BigNumber, string],
+      { queryId: BigNumber; response: string }
     >;
 
     Response(
       queryId?: null,
       response?: null
     ): TypedEventFilter<
-      [string, string],
-      { queryId: string; response: string }
+      [BigNumber, string],
+      { queryId: BigNumber; response: string }
     >;
   };
 
   estimateGas: {
     callback(
-      queryId: BytesLike,
+      queryId: BigNumberish,
       responseStr: string,
       overrides?: Overrides & { from?: string | Promise<string> }
     ): Promise<BigNumber>;
 
-    queryResponses(
-      arg0: BytesLike,
+    getLatestQuery(overrides?: CallOverrides): Promise<BigNumber>;
+
+    latestQueryId(overrides?: CallOverrides): Promise<BigNumber>;
+
+    queryInfos(
+      arg0: BigNumberish,
       overrides?: CallOverrides
     ): Promise<BigNumber>;
 
@@ -202,19 +242,23 @@ export class UserContract extends BaseContract {
       packageUri: string,
       method: string,
       argStr: string,
-      overrides?: Overrides & { from?: string | Promise<string> }
+      overrides?: PayableOverrides & { from?: string | Promise<string> }
     ): Promise<BigNumber>;
   };
 
   populateTransaction: {
     callback(
-      queryId: BytesLike,
+      queryId: BigNumberish,
       responseStr: string,
       overrides?: Overrides & { from?: string | Promise<string> }
     ): Promise<PopulatedTransaction>;
 
-    queryResponses(
-      arg0: BytesLike,
+    getLatestQuery(overrides?: CallOverrides): Promise<PopulatedTransaction>;
+
+    latestQueryId(overrides?: CallOverrides): Promise<PopulatedTransaction>;
+
+    queryInfos(
+      arg0: BigNumberish,
       overrides?: CallOverrides
     ): Promise<PopulatedTransaction>;
 
@@ -222,7 +266,7 @@ export class UserContract extends BaseContract {
       packageUri: string,
       method: string,
       argStr: string,
-      overrides?: Overrides & { from?: string | Promise<string> }
+      overrides?: PayableOverrides & { from?: string | Promise<string> }
     ): Promise<PopulatedTransaction>;
   };
 }

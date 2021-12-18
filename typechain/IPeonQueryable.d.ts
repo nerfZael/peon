@@ -11,7 +11,7 @@ import {
   PopulatedTransaction,
   BaseContract,
   ContractTransaction,
-  Overrides,
+  PayableOverrides,
   CallOverrides,
 } from "ethers";
 import { BytesLike } from "@ethersproject/bytes";
@@ -19,51 +19,35 @@ import { Listener, Provider } from "@ethersproject/providers";
 import { FunctionFragment, EventFragment, Result } from "@ethersproject/abi";
 import type { TypedEventFilter, TypedEvent, TypedListener } from "./common";
 
-interface IPEONInterface extends ethers.utils.Interface {
+interface IPeonQueryableInterface extends ethers.utils.Interface {
   functions: {
-    "query(string,bytes32,bytes,address,bytes4)": FunctionFragment;
-    "respond(bytes32,bytes32,bytes)": FunctionFragment;
+    "query(string,bytes32,bytes,address,bytes4,uint256)": FunctionFragment;
   };
 
   encodeFunctionData(
     functionFragment: "query",
-    values: [string, BytesLike, BytesLike, string, BytesLike]
-  ): string;
-  encodeFunctionData(
-    functionFragment: "respond",
-    values: [BytesLike, BytesLike, BytesLike]
+    values: [string, BytesLike, BytesLike, string, BytesLike, BigNumberish]
   ): string;
 
   decodeFunctionResult(functionFragment: "query", data: BytesLike): Result;
-  decodeFunctionResult(functionFragment: "respond", data: BytesLike): Result;
 
   events: {
-    "Query(bytes32,string,bytes32,bytes)": EventFragment;
-    "Response(bytes32,address,bytes32)": EventFragment;
+    "Query(uint256,string,bytes32,bytes)": EventFragment;
   };
 
   getEvent(nameOrSignatureOrTopic: "Query"): EventFragment;
-  getEvent(nameOrSignatureOrTopic: "Response"): EventFragment;
 }
 
 export type QueryEvent = TypedEvent<
-  [string, string, string, string] & {
-    queryId: string;
+  [BigNumber, string, string, string] & {
+    queryId: BigNumber;
     packageUri: string;
     func: string;
     args: string;
   }
 >;
 
-export type ResponseEvent = TypedEvent<
-  [string, string, string] & {
-    queryId: string;
-    executor: string;
-    responseHash: string;
-  }
->;
-
-export class IPEON extends BaseContract {
+export class IPeonQueryable extends BaseContract {
   connect(signerOrProvider: Signer | Provider | string): this;
   attach(addressOrName: string): this;
   deployed(): Promise<this>;
@@ -104,7 +88,7 @@ export class IPEON extends BaseContract {
     toBlock?: string | number | undefined
   ): Promise<Array<TypedEvent<EventArgsArray & EventArgsObject>>>;
 
-  interface: IPEONInterface;
+  interface: IPeonQueryableInterface;
 
   functions: {
     query(
@@ -113,14 +97,8 @@ export class IPEON extends BaseContract {
       args: BytesLike,
       callbackAddress: string,
       callbackFunc: BytesLike,
-      overrides?: Overrides & { from?: string | Promise<string> }
-    ): Promise<ContractTransaction>;
-
-    respond(
-      queryId: BytesLike,
-      responseHash: BytesLike,
-      response: BytesLike,
-      overrides?: Overrides & { from?: string | Promise<string> }
+      callbackGasLimit: BigNumberish,
+      overrides?: PayableOverrides & { from?: string | Promise<string> }
     ): Promise<ContractTransaction>;
   };
 
@@ -130,14 +108,8 @@ export class IPEON extends BaseContract {
     args: BytesLike,
     callbackAddress: string,
     callbackFunc: BytesLike,
-    overrides?: Overrides & { from?: string | Promise<string> }
-  ): Promise<ContractTransaction>;
-
-  respond(
-    queryId: BytesLike,
-    responseHash: BytesLike,
-    response: BytesLike,
-    overrides?: Overrides & { from?: string | Promise<string> }
+    callbackGasLimit: BigNumberish,
+    overrides?: PayableOverrides & { from?: string | Promise<string> }
   ): Promise<ContractTransaction>;
 
   callStatic: {
@@ -147,26 +119,20 @@ export class IPEON extends BaseContract {
       args: BytesLike,
       callbackAddress: string,
       callbackFunc: BytesLike,
+      callbackGasLimit: BigNumberish,
       overrides?: CallOverrides
-    ): Promise<string>;
-
-    respond(
-      queryId: BytesLike,
-      responseHash: BytesLike,
-      response: BytesLike,
-      overrides?: CallOverrides
-    ): Promise<void>;
+    ): Promise<BigNumber>;
   };
 
   filters: {
-    "Query(bytes32,string,bytes32,bytes)"(
+    "Query(uint256,string,bytes32,bytes)"(
       queryId?: null,
       packageUri?: null,
       func?: null,
       args?: null
     ): TypedEventFilter<
-      [string, string, string, string],
-      { queryId: string; packageUri: string; func: string; args: string }
+      [BigNumber, string, string, string],
+      { queryId: BigNumber; packageUri: string; func: string; args: string }
     >;
 
     Query(
@@ -175,26 +141,8 @@ export class IPEON extends BaseContract {
       func?: null,
       args?: null
     ): TypedEventFilter<
-      [string, string, string, string],
-      { queryId: string; packageUri: string; func: string; args: string }
-    >;
-
-    "Response(bytes32,address,bytes32)"(
-      queryId?: null,
-      executor?: null,
-      responseHash?: null
-    ): TypedEventFilter<
-      [string, string, string],
-      { queryId: string; executor: string; responseHash: string }
-    >;
-
-    Response(
-      queryId?: null,
-      executor?: null,
-      responseHash?: null
-    ): TypedEventFilter<
-      [string, string, string],
-      { queryId: string; executor: string; responseHash: string }
+      [BigNumber, string, string, string],
+      { queryId: BigNumber; packageUri: string; func: string; args: string }
     >;
   };
 
@@ -205,14 +153,8 @@ export class IPEON extends BaseContract {
       args: BytesLike,
       callbackAddress: string,
       callbackFunc: BytesLike,
-      overrides?: Overrides & { from?: string | Promise<string> }
-    ): Promise<BigNumber>;
-
-    respond(
-      queryId: BytesLike,
-      responseHash: BytesLike,
-      response: BytesLike,
-      overrides?: Overrides & { from?: string | Promise<string> }
+      callbackGasLimit: BigNumberish,
+      overrides?: PayableOverrides & { from?: string | Promise<string> }
     ): Promise<BigNumber>;
   };
 
@@ -223,14 +165,8 @@ export class IPEON extends BaseContract {
       args: BytesLike,
       callbackAddress: string,
       callbackFunc: BytesLike,
-      overrides?: Overrides & { from?: string | Promise<string> }
-    ): Promise<PopulatedTransaction>;
-
-    respond(
-      queryId: BytesLike,
-      responseHash: BytesLike,
-      response: BytesLike,
-      overrides?: Overrides & { from?: string | Promise<string> }
+      callbackGasLimit: BigNumberish,
+      overrides?: PayableOverrides & { from?: string | Promise<string> }
     ): Promise<PopulatedTransaction>;
   };
 }

@@ -20,46 +20,77 @@ import { Listener, Provider } from "@ethersproject/providers";
 import { FunctionFragment, EventFragment, Result } from "@ethersproject/abi";
 import type { TypedEventFilter, TypedEvent, TypedListener } from "./common";
 
-interface TestPeonImplementationInterface extends ethers.utils.Interface {
+interface TestPeonProxyInterface extends ethers.utils.Interface {
   functions: {
+    "deposit()": FunctionFragment;
     "owner()": FunctionFragment;
+    "peonAddress()": FunctionFragment;
+    "peonFee()": FunctionFragment;
     "query(string,bytes32,bytes,address,bytes4,uint256)": FunctionFragment;
-    "queryFee()": FunctionFragment;
-    "respond(uint256,bytes32,bytes)": FunctionFragment;
-    "setQueryFee(uint256)": FunctionFragment;
+    "respond()": FunctionFragment;
+    "setPeon(address)": FunctionFragment;
+    "setPeonFee(uint256)": FunctionFragment;
+    "userBalances(address)": FunctionFragment;
+    "withdraw(uint256)": FunctionFragment;
+    "withdrawAll()": FunctionFragment;
   };
 
+  encodeFunctionData(functionFragment: "deposit", values?: undefined): string;
   encodeFunctionData(functionFragment: "owner", values?: undefined): string;
+  encodeFunctionData(
+    functionFragment: "peonAddress",
+    values?: undefined
+  ): string;
+  encodeFunctionData(functionFragment: "peonFee", values?: undefined): string;
   encodeFunctionData(
     functionFragment: "query",
     values: [string, BytesLike, BytesLike, string, BytesLike, BigNumberish]
   ): string;
-  encodeFunctionData(functionFragment: "queryFee", values?: undefined): string;
+  encodeFunctionData(functionFragment: "respond", values?: undefined): string;
+  encodeFunctionData(functionFragment: "setPeon", values: [string]): string;
   encodeFunctionData(
-    functionFragment: "respond",
-    values: [BigNumberish, BytesLike, BytesLike]
-  ): string;
-  encodeFunctionData(
-    functionFragment: "setQueryFee",
+    functionFragment: "setPeonFee",
     values: [BigNumberish]
   ): string;
+  encodeFunctionData(
+    functionFragment: "userBalances",
+    values: [string]
+  ): string;
+  encodeFunctionData(
+    functionFragment: "withdraw",
+    values: [BigNumberish]
+  ): string;
+  encodeFunctionData(
+    functionFragment: "withdrawAll",
+    values?: undefined
+  ): string;
 
+  decodeFunctionResult(functionFragment: "deposit", data: BytesLike): Result;
   decodeFunctionResult(functionFragment: "owner", data: BytesLike): Result;
-  decodeFunctionResult(functionFragment: "query", data: BytesLike): Result;
-  decodeFunctionResult(functionFragment: "queryFee", data: BytesLike): Result;
-  decodeFunctionResult(functionFragment: "respond", data: BytesLike): Result;
   decodeFunctionResult(
-    functionFragment: "setQueryFee",
+    functionFragment: "peonAddress",
+    data: BytesLike
+  ): Result;
+  decodeFunctionResult(functionFragment: "peonFee", data: BytesLike): Result;
+  decodeFunctionResult(functionFragment: "query", data: BytesLike): Result;
+  decodeFunctionResult(functionFragment: "respond", data: BytesLike): Result;
+  decodeFunctionResult(functionFragment: "setPeon", data: BytesLike): Result;
+  decodeFunctionResult(functionFragment: "setPeonFee", data: BytesLike): Result;
+  decodeFunctionResult(
+    functionFragment: "userBalances",
+    data: BytesLike
+  ): Result;
+  decodeFunctionResult(functionFragment: "withdraw", data: BytesLike): Result;
+  decodeFunctionResult(
+    functionFragment: "withdrawAll",
     data: BytesLike
   ): Result;
 
   events: {
     "Query(uint256,string,bytes32,bytes)": EventFragment;
-    "Response(uint256,address,bytes32)": EventFragment;
   };
 
   getEvent(nameOrSignatureOrTopic: "Query"): EventFragment;
-  getEvent(nameOrSignatureOrTopic: "Response"): EventFragment;
 }
 
 export type QueryEvent = TypedEvent<
@@ -71,15 +102,7 @@ export type QueryEvent = TypedEvent<
   }
 >;
 
-export type ResponseEvent = TypedEvent<
-  [BigNumber, string, string] & {
-    queryId: BigNumber;
-    executor: string;
-    responseHash: string;
-  }
->;
-
-export class TestPeonImplementation extends BaseContract {
+export class TestPeonProxy extends BaseContract {
   connect(signerOrProvider: Signer | Provider | string): this;
   attach(addressOrName: string): this;
   deployed(): Promise<this>;
@@ -120,10 +143,18 @@ export class TestPeonImplementation extends BaseContract {
     toBlock?: string | number | undefined
   ): Promise<Array<TypedEvent<EventArgsArray & EventArgsObject>>>;
 
-  interface: TestPeonImplementationInterface;
+  interface: TestPeonProxyInterface;
 
   functions: {
+    deposit(
+      overrides?: PayableOverrides & { from?: string | Promise<string> }
+    ): Promise<ContractTransaction>;
+
     owner(overrides?: CallOverrides): Promise<[string]>;
+
+    peonAddress(overrides?: CallOverrides): Promise<[string]>;
+
+    peonFee(overrides?: CallOverrides): Promise<[BigNumber]>;
 
     query(
       packageUri: string,
@@ -135,22 +166,41 @@ export class TestPeonImplementation extends BaseContract {
       overrides?: PayableOverrides & { from?: string | Promise<string> }
     ): Promise<ContractTransaction>;
 
-    queryFee(overrides?: CallOverrides): Promise<[BigNumber]>;
-
     respond(
-      queryId: BigNumberish,
-      responseHash: BytesLike,
-      response: BytesLike,
       overrides?: Overrides & { from?: string | Promise<string> }
     ): Promise<ContractTransaction>;
 
-    setQueryFee(
-      _queryFee: BigNumberish,
+    setPeon(
+      _peonAddress: string,
+      overrides?: Overrides & { from?: string | Promise<string> }
+    ): Promise<ContractTransaction>;
+
+    setPeonFee(
+      _peonFee: BigNumberish,
+      overrides?: Overrides & { from?: string | Promise<string> }
+    ): Promise<ContractTransaction>;
+
+    userBalances(arg0: string, overrides?: CallOverrides): Promise<[BigNumber]>;
+
+    withdraw(
+      amount: BigNumberish,
+      overrides?: Overrides & { from?: string | Promise<string> }
+    ): Promise<ContractTransaction>;
+
+    withdrawAll(
       overrides?: Overrides & { from?: string | Promise<string> }
     ): Promise<ContractTransaction>;
   };
 
+  deposit(
+    overrides?: PayableOverrides & { from?: string | Promise<string> }
+  ): Promise<ContractTransaction>;
+
   owner(overrides?: CallOverrides): Promise<string>;
+
+  peonAddress(overrides?: CallOverrides): Promise<string>;
+
+  peonFee(overrides?: CallOverrides): Promise<BigNumber>;
 
   query(
     packageUri: string,
@@ -162,22 +212,39 @@ export class TestPeonImplementation extends BaseContract {
     overrides?: PayableOverrides & { from?: string | Promise<string> }
   ): Promise<ContractTransaction>;
 
-  queryFee(overrides?: CallOverrides): Promise<BigNumber>;
-
   respond(
-    queryId: BigNumberish,
-    responseHash: BytesLike,
-    response: BytesLike,
     overrides?: Overrides & { from?: string | Promise<string> }
   ): Promise<ContractTransaction>;
 
-  setQueryFee(
-    _queryFee: BigNumberish,
+  setPeon(
+    _peonAddress: string,
+    overrides?: Overrides & { from?: string | Promise<string> }
+  ): Promise<ContractTransaction>;
+
+  setPeonFee(
+    _peonFee: BigNumberish,
+    overrides?: Overrides & { from?: string | Promise<string> }
+  ): Promise<ContractTransaction>;
+
+  userBalances(arg0: string, overrides?: CallOverrides): Promise<BigNumber>;
+
+  withdraw(
+    amount: BigNumberish,
+    overrides?: Overrides & { from?: string | Promise<string> }
+  ): Promise<ContractTransaction>;
+
+  withdrawAll(
     overrides?: Overrides & { from?: string | Promise<string> }
   ): Promise<ContractTransaction>;
 
   callStatic: {
+    deposit(overrides?: CallOverrides): Promise<void>;
+
     owner(overrides?: CallOverrides): Promise<string>;
+
+    peonAddress(overrides?: CallOverrides): Promise<string>;
+
+    peonFee(overrides?: CallOverrides): Promise<BigNumber>;
 
     query(
       packageUri: string,
@@ -189,19 +256,20 @@ export class TestPeonImplementation extends BaseContract {
       overrides?: CallOverrides
     ): Promise<BigNumber>;
 
-    queryFee(overrides?: CallOverrides): Promise<BigNumber>;
+    respond(overrides?: CallOverrides): Promise<void>;
 
-    respond(
-      queryId: BigNumberish,
-      responseHash: BytesLike,
-      response: BytesLike,
+    setPeon(_peonAddress: string, overrides?: CallOverrides): Promise<void>;
+
+    setPeonFee(
+      _peonFee: BigNumberish,
       overrides?: CallOverrides
     ): Promise<void>;
 
-    setQueryFee(
-      _queryFee: BigNumberish,
-      overrides?: CallOverrides
-    ): Promise<void>;
+    userBalances(arg0: string, overrides?: CallOverrides): Promise<BigNumber>;
+
+    withdraw(amount: BigNumberish, overrides?: CallOverrides): Promise<void>;
+
+    withdrawAll(overrides?: CallOverrides): Promise<void>;
   };
 
   filters: {
@@ -224,28 +292,18 @@ export class TestPeonImplementation extends BaseContract {
       [BigNumber, string, string, string],
       { queryId: BigNumber; packageUri: string; func: string; args: string }
     >;
-
-    "Response(uint256,address,bytes32)"(
-      queryId?: null,
-      executor?: null,
-      responseHash?: null
-    ): TypedEventFilter<
-      [BigNumber, string, string],
-      { queryId: BigNumber; executor: string; responseHash: string }
-    >;
-
-    Response(
-      queryId?: null,
-      executor?: null,
-      responseHash?: null
-    ): TypedEventFilter<
-      [BigNumber, string, string],
-      { queryId: BigNumber; executor: string; responseHash: string }
-    >;
   };
 
   estimateGas: {
+    deposit(
+      overrides?: PayableOverrides & { from?: string | Promise<string> }
+    ): Promise<BigNumber>;
+
     owner(overrides?: CallOverrides): Promise<BigNumber>;
+
+    peonAddress(overrides?: CallOverrides): Promise<BigNumber>;
+
+    peonFee(overrides?: CallOverrides): Promise<BigNumber>;
 
     query(
       packageUri: string,
@@ -257,23 +315,42 @@ export class TestPeonImplementation extends BaseContract {
       overrides?: PayableOverrides & { from?: string | Promise<string> }
     ): Promise<BigNumber>;
 
-    queryFee(overrides?: CallOverrides): Promise<BigNumber>;
-
     respond(
-      queryId: BigNumberish,
-      responseHash: BytesLike,
-      response: BytesLike,
       overrides?: Overrides & { from?: string | Promise<string> }
     ): Promise<BigNumber>;
 
-    setQueryFee(
-      _queryFee: BigNumberish,
+    setPeon(
+      _peonAddress: string,
+      overrides?: Overrides & { from?: string | Promise<string> }
+    ): Promise<BigNumber>;
+
+    setPeonFee(
+      _peonFee: BigNumberish,
+      overrides?: Overrides & { from?: string | Promise<string> }
+    ): Promise<BigNumber>;
+
+    userBalances(arg0: string, overrides?: CallOverrides): Promise<BigNumber>;
+
+    withdraw(
+      amount: BigNumberish,
+      overrides?: Overrides & { from?: string | Promise<string> }
+    ): Promise<BigNumber>;
+
+    withdrawAll(
       overrides?: Overrides & { from?: string | Promise<string> }
     ): Promise<BigNumber>;
   };
 
   populateTransaction: {
+    deposit(
+      overrides?: PayableOverrides & { from?: string | Promise<string> }
+    ): Promise<PopulatedTransaction>;
+
     owner(overrides?: CallOverrides): Promise<PopulatedTransaction>;
+
+    peonAddress(overrides?: CallOverrides): Promise<PopulatedTransaction>;
+
+    peonFee(overrides?: CallOverrides): Promise<PopulatedTransaction>;
 
     query(
       packageUri: string,
@@ -285,17 +362,31 @@ export class TestPeonImplementation extends BaseContract {
       overrides?: PayableOverrides & { from?: string | Promise<string> }
     ): Promise<PopulatedTransaction>;
 
-    queryFee(overrides?: CallOverrides): Promise<PopulatedTransaction>;
-
     respond(
-      queryId: BigNumberish,
-      responseHash: BytesLike,
-      response: BytesLike,
       overrides?: Overrides & { from?: string | Promise<string> }
     ): Promise<PopulatedTransaction>;
 
-    setQueryFee(
-      _queryFee: BigNumberish,
+    setPeon(
+      _peonAddress: string,
+      overrides?: Overrides & { from?: string | Promise<string> }
+    ): Promise<PopulatedTransaction>;
+
+    setPeonFee(
+      _peonFee: BigNumberish,
+      overrides?: Overrides & { from?: string | Promise<string> }
+    ): Promise<PopulatedTransaction>;
+
+    userBalances(
+      arg0: string,
+      overrides?: CallOverrides
+    ): Promise<PopulatedTransaction>;
+
+    withdraw(
+      amount: BigNumberish,
+      overrides?: Overrides & { from?: string | Promise<string> }
+    ): Promise<PopulatedTransaction>;
+
+    withdrawAll(
       overrides?: Overrides & { from?: string | Promise<string> }
     ): Promise<PopulatedTransaction>;
   };

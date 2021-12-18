@@ -4,7 +4,7 @@
 
 import { Contract, Signer, utils } from "ethers";
 import { Provider } from "@ethersproject/providers";
-import type { IPEON, IPEONInterface } from "../IPEON";
+import type { IPeon, IPeonInterface } from "../IPeon";
 
 const _abi = [
   {
@@ -12,9 +12,9 @@ const _abi = [
     inputs: [
       {
         indexed: false,
-        internalType: "bytes32",
+        internalType: "uint256",
         name: "queryId",
-        type: "bytes32",
+        type: "uint256",
       },
       {
         indexed: false,
@@ -43,9 +43,9 @@ const _abi = [
     inputs: [
       {
         indexed: false,
-        internalType: "bytes32",
+        internalType: "uint256",
         name: "queryId",
-        type: "bytes32",
+        type: "uint256",
       },
       {
         indexed: false,
@@ -90,24 +90,29 @@ const _abi = [
         name: "callbackFunc",
         type: "bytes4",
       },
+      {
+        internalType: "uint256",
+        name: "callbackGasLimit",
+        type: "uint256",
+      },
     ],
     name: "query",
     outputs: [
       {
-        internalType: "bytes32",
+        internalType: "uint256",
         name: "queryId",
-        type: "bytes32",
+        type: "uint256",
       },
     ],
-    stateMutability: "nonpayable",
+    stateMutability: "payable",
     type: "function",
   },
   {
     inputs: [
       {
-        internalType: "bytes32",
+        internalType: "uint256",
         name: "queryId",
-        type: "bytes32",
+        type: "uint256",
       },
       {
         internalType: "bytes32",
@@ -127,12 +132,12 @@ const _abi = [
   },
 ];
 
-export class IPEON__factory {
+export class IPeon__factory {
   static readonly abi = _abi;
-  static createInterface(): IPEONInterface {
-    return new utils.Interface(_abi) as IPEONInterface;
+  static createInterface(): IPeonInterface {
+    return new utils.Interface(_abi) as IPeonInterface;
   }
-  static connect(address: string, signerOrProvider: Signer | Provider): IPEON {
-    return new Contract(address, _abi, signerOrProvider) as IPEON;
+  static connect(address: string, signerOrProvider: Signer | Provider): IPeon {
+    return new Contract(address, _abi, signerOrProvider) as IPeon;
   }
 }

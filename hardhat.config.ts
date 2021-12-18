@@ -6,6 +6,8 @@ import "solidity-coverage";
 import "hardhat-deploy";
 import "@nomiclabs/hardhat-ethers";
 
+require('dotenv').config();
+
 task("accounts", "Prints the list of accounts", async (args, hre) => {
   const accounts = await hre.ethers.getSigners();
 
@@ -49,6 +51,16 @@ const config: HardhatUserConfig = {
       accounts: {
         mnemonic: "test test test test test test test test test test test test",
       },
+      deploy: ["./deploy/scripts/localhost"],
+    },
+    rinkeby: {
+      live: true,
+      gas: "auto",
+      gasPrice: "auto",
+      gasMultiplier: 1,
+      url: process.env.ETHERS_PROVIDER,
+      chainId: 4,
+      accounts: [`0x${process.env.RINKEBY_PRIVATE_KEY}`],
       deploy: ["./deploy/scripts/localhost"],
     }
   },

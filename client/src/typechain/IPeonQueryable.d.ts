@@ -11,7 +11,6 @@ import {
   PopulatedTransaction,
   BaseContract,
   ContractTransaction,
-  Overrides,
   PayableOverrides,
   CallOverrides,
 } from "ethers";
@@ -20,46 +19,23 @@ import { Listener, Provider } from "@ethersproject/providers";
 import { FunctionFragment, EventFragment, Result } from "@ethersproject/abi";
 import type { TypedEventFilter, TypedEvent, TypedListener } from "./common";
 
-interface TestPeonImplementationInterface extends ethers.utils.Interface {
+interface IPeonQueryableInterface extends ethers.utils.Interface {
   functions: {
-    "owner()": FunctionFragment;
     "query(string,bytes32,bytes,address,bytes4,uint256)": FunctionFragment;
-    "queryFee()": FunctionFragment;
-    "respond(uint256,bytes32,bytes)": FunctionFragment;
-    "setQueryFee(uint256)": FunctionFragment;
   };
 
-  encodeFunctionData(functionFragment: "owner", values?: undefined): string;
   encodeFunctionData(
     functionFragment: "query",
     values: [string, BytesLike, BytesLike, string, BytesLike, BigNumberish]
   ): string;
-  encodeFunctionData(functionFragment: "queryFee", values?: undefined): string;
-  encodeFunctionData(
-    functionFragment: "respond",
-    values: [BigNumberish, BytesLike, BytesLike]
-  ): string;
-  encodeFunctionData(
-    functionFragment: "setQueryFee",
-    values: [BigNumberish]
-  ): string;
 
-  decodeFunctionResult(functionFragment: "owner", data: BytesLike): Result;
   decodeFunctionResult(functionFragment: "query", data: BytesLike): Result;
-  decodeFunctionResult(functionFragment: "queryFee", data: BytesLike): Result;
-  decodeFunctionResult(functionFragment: "respond", data: BytesLike): Result;
-  decodeFunctionResult(
-    functionFragment: "setQueryFee",
-    data: BytesLike
-  ): Result;
 
   events: {
     "Query(uint256,string,bytes32,bytes)": EventFragment;
-    "Response(uint256,address,bytes32)": EventFragment;
   };
 
   getEvent(nameOrSignatureOrTopic: "Query"): EventFragment;
-  getEvent(nameOrSignatureOrTopic: "Response"): EventFragment;
 }
 
 export type QueryEvent = TypedEvent<
@@ -71,15 +47,7 @@ export type QueryEvent = TypedEvent<
   }
 >;
 
-export type ResponseEvent = TypedEvent<
-  [BigNumber, string, string] & {
-    queryId: BigNumber;
-    executor: string;
-    responseHash: string;
-  }
->;
-
-export class TestPeonImplementation extends BaseContract {
+export class IPeonQueryable extends BaseContract {
   connect(signerOrProvider: Signer | Provider | string): this;
   attach(addressOrName: string): this;
   deployed(): Promise<this>;
@@ -120,11 +88,9 @@ export class TestPeonImplementation extends BaseContract {
     toBlock?: string | number | undefined
   ): Promise<Array<TypedEvent<EventArgsArray & EventArgsObject>>>;
 
-  interface: TestPeonImplementationInterface;
+  interface: IPeonQueryableInterface;
 
   functions: {
-    owner(overrides?: CallOverrides): Promise<[string]>;
-
     query(
       packageUri: string,
       func: BytesLike,
@@ -134,23 +100,7 @@ export class TestPeonImplementation extends BaseContract {
       callbackGasLimit: BigNumberish,
       overrides?: PayableOverrides & { from?: string | Promise<string> }
     ): Promise<ContractTransaction>;
-
-    queryFee(overrides?: CallOverrides): Promise<[BigNumber]>;
-
-    respond(
-      queryId: BigNumberish,
-      responseHash: BytesLike,
-      response: BytesLike,
-      overrides?: Overrides & { from?: string | Promise<string> }
-    ): Promise<ContractTransaction>;
-
-    setQueryFee(
-      _queryFee: BigNumberish,
-      overrides?: Overrides & { from?: string | Promise<string> }
-    ): Promise<ContractTransaction>;
   };
-
-  owner(overrides?: CallOverrides): Promise<string>;
 
   query(
     packageUri: string,
@@ -162,23 +112,7 @@ export class TestPeonImplementation extends BaseContract {
     overrides?: PayableOverrides & { from?: string | Promise<string> }
   ): Promise<ContractTransaction>;
 
-  queryFee(overrides?: CallOverrides): Promise<BigNumber>;
-
-  respond(
-    queryId: BigNumberish,
-    responseHash: BytesLike,
-    response: BytesLike,
-    overrides?: Overrides & { from?: string | Promise<string> }
-  ): Promise<ContractTransaction>;
-
-  setQueryFee(
-    _queryFee: BigNumberish,
-    overrides?: Overrides & { from?: string | Promise<string> }
-  ): Promise<ContractTransaction>;
-
   callStatic: {
-    owner(overrides?: CallOverrides): Promise<string>;
-
     query(
       packageUri: string,
       func: BytesLike,
@@ -188,20 +122,6 @@ export class TestPeonImplementation extends BaseContract {
       callbackGasLimit: BigNumberish,
       overrides?: CallOverrides
     ): Promise<BigNumber>;
-
-    queryFee(overrides?: CallOverrides): Promise<BigNumber>;
-
-    respond(
-      queryId: BigNumberish,
-      responseHash: BytesLike,
-      response: BytesLike,
-      overrides?: CallOverrides
-    ): Promise<void>;
-
-    setQueryFee(
-      _queryFee: BigNumberish,
-      overrides?: CallOverrides
-    ): Promise<void>;
   };
 
   filters: {
@@ -224,29 +144,9 @@ export class TestPeonImplementation extends BaseContract {
       [BigNumber, string, string, string],
       { queryId: BigNumber; packageUri: string; func: string; args: string }
     >;
-
-    "Response(uint256,address,bytes32)"(
-      queryId?: null,
-      executor?: null,
-      responseHash?: null
-    ): TypedEventFilter<
-      [BigNumber, string, string],
-      { queryId: BigNumber; executor: string; responseHash: string }
-    >;
-
-    Response(
-      queryId?: null,
-      executor?: null,
-      responseHash?: null
-    ): TypedEventFilter<
-      [BigNumber, string, string],
-      { queryId: BigNumber; executor: string; responseHash: string }
-    >;
   };
 
   estimateGas: {
-    owner(overrides?: CallOverrides): Promise<BigNumber>;
-
     query(
       packageUri: string,
       func: BytesLike,
@@ -255,26 +155,10 @@ export class TestPeonImplementation extends BaseContract {
       callbackFunc: BytesLike,
       callbackGasLimit: BigNumberish,
       overrides?: PayableOverrides & { from?: string | Promise<string> }
-    ): Promise<BigNumber>;
-
-    queryFee(overrides?: CallOverrides): Promise<BigNumber>;
-
-    respond(
-      queryId: BigNumberish,
-      responseHash: BytesLike,
-      response: BytesLike,
-      overrides?: Overrides & { from?: string | Promise<string> }
-    ): Promise<BigNumber>;
-
-    setQueryFee(
-      _queryFee: BigNumberish,
-      overrides?: Overrides & { from?: string | Promise<string> }
     ): Promise<BigNumber>;
   };
 
   populateTransaction: {
-    owner(overrides?: CallOverrides): Promise<PopulatedTransaction>;
-
     query(
       packageUri: string,
       func: BytesLike,
@@ -283,20 +167,6 @@ export class TestPeonImplementation extends BaseContract {
       callbackFunc: BytesLike,
       callbackGasLimit: BigNumberish,
       overrides?: PayableOverrides & { from?: string | Promise<string> }
-    ): Promise<PopulatedTransaction>;
-
-    queryFee(overrides?: CallOverrides): Promise<PopulatedTransaction>;
-
-    respond(
-      queryId: BigNumberish,
-      responseHash: BytesLike,
-      response: BytesLike,
-      overrides?: Overrides & { from?: string | Promise<string> }
-    ): Promise<PopulatedTransaction>;
-
-    setQueryFee(
-      _queryFee: BigNumberish,
-      overrides?: Overrides & { from?: string | Promise<string> }
     ): Promise<PopulatedTransaction>;
   };
 }

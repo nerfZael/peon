@@ -1,14 +1,16 @@
 import hre, { ethers, deployments, getNamedAccounts } from "hardhat";
-import chai, { expect } from "chai";
+import chai, { expect, use } from "chai";
 import {
   BytesLike,
 } from "ethers/lib/utils";
 import {
-  IPEON,
-  IPEON__factory,
+  IPeon,
+  IPeon__factory,
+  TestPeonProxy,
+  TestPeonProxy__factory,
   UserContract, UserContract__factory
 } from "../typechain";
-import { Signer } from "ethers";
+import { providers, Signer } from "ethers";
 import { Web3ApiClient } from "@web3api/client-js";
 import { processQuery } from "./helpers/processQuery";
 import { setupWeb3ApiClient } from "./helpers/web3Api/setupClient";
@@ -18,7 +20,8 @@ dotenv.config();
 
 describe("PEON", () => {
   let userContract: UserContract;
-  let peonImpl: IPEON;
+  let peonImpl: IPeon;
+  let peonProxy: TestPeonProxy;
 
   let owner: Signer;
   let nodeOperator: Signer;
@@ -38,16 +41,19 @@ describe("PEON", () => {
   beforeEach(async () => {
     const deploys = await deployments.fixture(["peon"]);
 
-    const provider = ethers.getDefaultProvider();
-
-    peonImpl = IPEON__factory.connect(
+    peonImpl = IPeon__factory.connect(
       deploys["TestPeonImplementation"].address,
-      provider
+      ethers.provider
+    );
+
+    peonProxy = TestPeonProxy__factory.connect(
+      deploys["TestPeonProxy"].address,
+      ethers.provider
     );
 
     userContract = UserContract__factory.connect(
       deploys["UserContract"].address,
-      provider
+      ethers.provider
     );
 
     polywrapClient = setupWeb3ApiClient({
@@ -70,19 +76,34 @@ describe("PEON", () => {
     });
 
     const queryTx = await userContract.someFunc(
-      "implementation2.eth",
+      "implementation1.eth",
       "query.speak(string)",
-      "hello"
+      "hello",
+      {
+        value: ethers.utils.parseEther("1.0")
+      }
     );
 
     const receipt = await queryTx.wait();
 
-    const queryId: BytesLike = receipt.events![1].args!.queryId;
+    console.log("1", await getBalance(userContract.address));
+    console.log("2", await getBalance(peonProxy.address));
+    console.log("3", await getBalance(peonImpl.address));
+
+    const queryId: BytesLike = receipt.events![2].args!.queryId;
 
     await nodePromise;
+
+    console.log("1", await getBalance(userContract.address));
+    console.log("2", await getBalance(peonProxy.address));
+    console.log("3", await getBalance(peonImpl.address));
 
     const queryInfo = await userContract.queryInfos(queryId);
     expect(queryInfo.exists).to.equal(true);
     console.log(queryInfo);
   });
+
+  const getBalance = async(address: string) => {
+    return ethers.utils.formatEther(await ethers.provider.getBalance(address));
+  };
 });

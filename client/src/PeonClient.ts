@@ -1,8 +1,8 @@
 import { Web3ApiClient } from "@web3api/client-js";
-import { ethers, Signer } from "ethers";
+import { BigNumber, BytesLike, ethers, Signer } from "ethers";
 import { PeonClientConfig } from "./config/PeonClientConfig";
 import { processQuery } from "./helpers/processQuery";
-import { IPEON__factory } from "./typechain";
+import { IPeon__factory } from "./typechain";
 
 export class PeonClient {
   private peonClientSigner: Signer;
@@ -18,7 +18,7 @@ export class PeonClient {
 
   async run(peonAddress: string): Promise<void> {
     console.log(`Listening for queries @ ${peonAddress}...`);
-    const peonContract = IPEON__factory.connect(peonAddress, this.peonClientSigner);
+    const peonContract = IPeon__factory.connect(peonAddress, this.peonClientSigner);
 
     peonContract.on(peonContract.filters.Query(), async (queryId, packageUri, func, args) => {
       console.log(`Found query for uri=${packageUri}, queryId=${queryId}`);

@@ -1,14 +1,14 @@
 import { Web3ApiClient } from "@web3api/client-js";
-import { BytesLike } from "ethers";
+import { BigNumber, BytesLike } from "ethers";
 import { defaultAbiCoder, keccak256, solidityKeccak256 } from "ethers/lib/utils";
-import { IPEON } from "../../typechain";
+import { IPeon } from "../../typechain";
 import { getPolywrapperMethodMap } from "./getPolywrapperMethodMap";
 import { query } from "./query";
 
 export const processQuery = async (
   polywrapClient: Web3ApiClient,
-  peonContract: IPEON, 
-  queryId: BytesLike, 
+  peonContract: IPeon, 
+  queryId: BigNumber, 
   packageUri: string, 
   func: BytesLike, 
   args: BytesLike
@@ -28,7 +28,7 @@ export const processQuery = async (
     methodInfo.argNames, decodedArgs)
 
   let responseData: BytesLike = defaultAbiCoder.encode(
-    ["bytes32"].concat(methodInfo.returnTypes), 
+    ["uint256"].concat(methodInfo.returnTypes), 
     [queryId, response]
   );
 

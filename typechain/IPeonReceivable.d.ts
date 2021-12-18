@@ -19,52 +19,34 @@ import { Listener, Provider } from "@ethersproject/providers";
 import { FunctionFragment, EventFragment, Result } from "@ethersproject/abi";
 import type { TypedEventFilter, TypedEvent, TypedListener } from "./common";
 
-interface TestPeonEndpointImplementationInterface
-  extends ethers.utils.Interface {
+interface IPeonReceivableInterface extends ethers.utils.Interface {
   functions: {
-    "query(string,bytes32,bytes,address,bytes4)": FunctionFragment;
-    "respond(bytes32,bytes32,bytes)": FunctionFragment;
+    "respond(uint256,bytes32,bytes)": FunctionFragment;
   };
 
   encodeFunctionData(
-    functionFragment: "query",
-    values: [string, BytesLike, BytesLike, string, BytesLike]
-  ): string;
-  encodeFunctionData(
     functionFragment: "respond",
-    values: [BytesLike, BytesLike, BytesLike]
+    values: [BigNumberish, BytesLike, BytesLike]
   ): string;
 
-  decodeFunctionResult(functionFragment: "query", data: BytesLike): Result;
   decodeFunctionResult(functionFragment: "respond", data: BytesLike): Result;
 
   events: {
-    "Query(bytes32,string,bytes32,bytes)": EventFragment;
-    "Response(bytes32,address,bytes32)": EventFragment;
+    "Response(uint256,address,bytes32)": EventFragment;
   };
 
-  getEvent(nameOrSignatureOrTopic: "Query"): EventFragment;
   getEvent(nameOrSignatureOrTopic: "Response"): EventFragment;
 }
 
-export type QueryEvent = TypedEvent<
-  [string, string, string, string] & {
-    queryId: string;
-    packageUri: string;
-    func: string;
-    args: string;
-  }
->;
-
 export type ResponseEvent = TypedEvent<
-  [string, string, string] & {
-    queryId: string;
+  [BigNumber, string, string] & {
+    queryId: BigNumber;
     executor: string;
     responseHash: string;
   }
 >;
 
-export class TestPeonEndpointImplementation extends BaseContract {
+export class IPeonReceivable extends BaseContract {
   connect(signerOrProvider: Signer | Provider | string): this;
   attach(addressOrName: string): this;
   deployed(): Promise<this>;
@@ -105,54 +87,27 @@ export class TestPeonEndpointImplementation extends BaseContract {
     toBlock?: string | number | undefined
   ): Promise<Array<TypedEvent<EventArgsArray & EventArgsObject>>>;
 
-  interface: TestPeonEndpointImplementationInterface;
+  interface: IPeonReceivableInterface;
 
   functions: {
-    query(
-      packageUri: string,
-      func: BytesLike,
-      args: BytesLike,
-      callbackAddress: string,
-      callbackFunc: BytesLike,
-      overrides?: Overrides & { from?: string | Promise<string> }
-    ): Promise<ContractTransaction>;
-
     respond(
-      queryId: BytesLike,
+      queryId: BigNumberish,
       responseHash: BytesLike,
       response: BytesLike,
       overrides?: Overrides & { from?: string | Promise<string> }
     ): Promise<ContractTransaction>;
   };
 
-  query(
-    packageUri: string,
-    func: BytesLike,
-    args: BytesLike,
-    callbackAddress: string,
-    callbackFunc: BytesLike,
-    overrides?: Overrides & { from?: string | Promise<string> }
-  ): Promise<ContractTransaction>;
-
   respond(
-    queryId: BytesLike,
+    queryId: BigNumberish,
     responseHash: BytesLike,
     response: BytesLike,
     overrides?: Overrides & { from?: string | Promise<string> }
   ): Promise<ContractTransaction>;
 
   callStatic: {
-    query(
-      packageUri: string,
-      func: BytesLike,
-      args: BytesLike,
-      callbackAddress: string,
-      callbackFunc: BytesLike,
-      overrides?: CallOverrides
-    ): Promise<string>;
-
     respond(
-      queryId: BytesLike,
+      queryId: BigNumberish,
       responseHash: BytesLike,
       response: BytesLike,
       overrides?: CallOverrides
@@ -160,33 +115,13 @@ export class TestPeonEndpointImplementation extends BaseContract {
   };
 
   filters: {
-    "Query(bytes32,string,bytes32,bytes)"(
-      queryId?: null,
-      packageUri?: null,
-      func?: null,
-      args?: null
-    ): TypedEventFilter<
-      [string, string, string, string],
-      { queryId: string; packageUri: string; func: string; args: string }
-    >;
-
-    Query(
-      queryId?: null,
-      packageUri?: null,
-      func?: null,
-      args?: null
-    ): TypedEventFilter<
-      [string, string, string, string],
-      { queryId: string; packageUri: string; func: string; args: string }
-    >;
-
-    "Response(bytes32,address,bytes32)"(
+    "Response(uint256,address,bytes32)"(
       queryId?: null,
       executor?: null,
       responseHash?: null
     ): TypedEventFilter<
-      [string, string, string],
-      { queryId: string; executor: string; responseHash: string }
+      [BigNumber, string, string],
+      { queryId: BigNumber; executor: string; responseHash: string }
     >;
 
     Response(
@@ -194,23 +129,14 @@ export class TestPeonEndpointImplementation extends BaseContract {
       executor?: null,
       responseHash?: null
     ): TypedEventFilter<
-      [string, string, string],
-      { queryId: string; executor: string; responseHash: string }
+      [BigNumber, string, string],
+      { queryId: BigNumber; executor: string; responseHash: string }
     >;
   };
 
   estimateGas: {
-    query(
-      packageUri: string,
-      func: BytesLike,
-      args: BytesLike,
-      callbackAddress: string,
-      callbackFunc: BytesLike,
-      overrides?: Overrides & { from?: string | Promise<string> }
-    ): Promise<BigNumber>;
-
     respond(
-      queryId: BytesLike,
+      queryId: BigNumberish,
       responseHash: BytesLike,
       response: BytesLike,
       overrides?: Overrides & { from?: string | Promise<string> }
@@ -218,17 +144,8 @@ export class TestPeonEndpointImplementation extends BaseContract {
   };
 
   populateTransaction: {
-    query(
-      packageUri: string,
-      func: BytesLike,
-      args: BytesLike,
-      callbackAddress: string,
-      callbackFunc: BytesLike,
-      overrides?: Overrides & { from?: string | Promise<string> }
-    ): Promise<PopulatedTransaction>;
-
     respond(
-      queryId: BytesLike,
+      queryId: BigNumberish,
       responseHash: BytesLike,
       response: BytesLike,
       overrides?: Overrides & { from?: string | Promise<string> }

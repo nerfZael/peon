@@ -1,36 +1,56 @@
 // SPDX-License-Identifier: MIT
 pragma solidity ^0.8.4;
 
-import "./IPEON.sol";
-import "hardhat/console.sol";
+import "./IPeonQueryable.sol";
+import "./IPeonReceivable.sol";
 
-contract TestPeonImplementation is IPEON {
+contract TestPeonImplementation is IPeonQueryable, IPeonReceivable {
   struct QueryInfo {
     address callbackAddress;
     bytes4 callbackFunc;
+    uint256 callbackGasLimit;
     bool executed;
     mapping(address => bool) executorsResponded;
     mapping(bytes32 => uint256) executorResponses;
   }
 
   mapping(address => bool) authorizedExecutors;
-  mapping(bytes32 => QueryInfo) queries;
+  mapping(uint256 => QueryInfo) queries;
   uint256 executorCnt;
   uint256 queryCnt;
+  address public owner;
+  uint256 public queryFee = 0.1 ether;
 
-  constructor(address[] memory _authorizedExecutors) {
+  constructor(address _owner, address[] memory _authorizedExecutors) {
+    owner = _owner;
     for(uint256 i; i < _authorizedExecutors.length; i++) {
       authorizedExecutors[_authorizedExecutors[i]] = true;
     }
   }
 
-  function query(string calldata packageUri, bytes32 func, bytes calldata args, address callbackAddress, bytes4 callbackFunc) public override returns(bytes32) {
+  function setQueryFee(uint256 _queryFee) public {
+    require(msg.sender == owner, "You are not the owner");
+    queryFee = _queryFee;
+  }
+
+  function query(
+    string calldata packageUri, 
+    bytes32 func, 
+    bytes calldata args, 
+    address callbackAddress, 
+    bytes4 callbackFunc, 
+    uint256 callbackGasLimit
+  ) public payable override returns(uint256) {
+    require(msg.value >= queryFee);
+    require(callbackGasLimit <= 1000000);
+    
     queryCnt++;
-    bytes32 queryId = bytes32(queryCnt);
+    uint256 queryId = queryCnt;
 
     QueryInfo storage queryInfo = queries[queryId];
     queryInfo.callbackAddress = callbackAddress;
     queryInfo.callbackFunc = callbackFunc;
+    queryInfo.callbackGasLimit = callbackGasLimit;
     queryInfo.executed = false;
 
     emit Query(queryId, packageUri, func, args);
@@ -38,7 +58,7 @@ contract TestPeonImplementation is IPEON {
     return queryId;
   }
 
-  function respond(bytes32 queryId, bytes32 responseHash, bytes calldata response) public override {
+  function respond(uint256 queryId, bytes32 responseHash, bytes calldata response) public override {
     require(keccak256(abi.encodePacked(response)) == responseHash, "Response hash is invalid");
    
     QueryInfo storage queryInfo = queries[queryId];
@@ -56,28 +76,31 @@ contract TestPeonImplementation is IPEON {
 
     queryInfo.executed = true;
 
-    bytes memory queryIdBytes = new bytes(32);
+    uint256 encodedQueryId;
+    bytes memory responseData = response;
 
-    for(uint i = 0; i<32; i++){
-      queryIdBytes[i] = response[i];
-    }
-
-    bytes32 encodedQueryId;
     assembly {
-      encodedQueryId := mload(add(queryIdBytes, 32))
+      encodedQueryId := mload(add(responseData, 32))
     }
+    
     require(encodedQueryId == queryId, "Bad encoding");
 
     bytes memory data = bytes.concat(queryInfo.callbackFunc, response);
 
-    (bool success, ) = queryInfo.callbackAddress.call(data);
-    require(success);
- 
+    (bool success,) = queryInfo.callbackAddress.call{gas: queryInfo.callbackGasLimit}(data);
+
+    withdrawAll();
+
     emit Response(queryId, msg.sender, responseHash);
   }
 
   function consensus(QueryInfo storage queryInfo, bytes32 responseHash) private view returns(bool) {
     return queryInfo.executorResponses[responseHash] >= 1;
+  }
+
+  function withdrawAll() private {
+    (bool sent,) = payable(msg.sender).call{value: address(this).balance}("");
+    require(sent, "Failed to send funds");
   }
 }
 
